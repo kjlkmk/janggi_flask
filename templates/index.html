@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장기 AI 게임</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="top-section">
+            <h1>AI 장기 게임</h1>
+            <div class="game-info-top">
+                <p><strong>현재 선수:</strong> <span id="turn">-</span></p>
+                <p><strong>상태:</strong> <span id="status">게임을 시작하세요.</span></p>
+                <p><strong>AI 평가:</strong> <span id="ai-evaluation">-</span></p>
+            </div>
+        </header>
+
+        <main class="middle-section">
+            <div id="board"></div>
+        </main>
+
+        <footer class="bottom-section">
+            <div class="controls-top">
+                <button id="start-btn">새 게임 시작</button>
+                <button id="flip-btn">판 뒤집기</button>
+                <button id="edit-board-btn">판 편집</button>
+            </div>
+            <div class="fen-controls">
+                <input type="text" id="fen-string" placeholder="FEN 문자열">
+                <button id="load-fen-btn">적용</button>
+                <button id="copy-fen-btn">복사</button>
+            </div>
+            <div class="ai-settings">
+                <label>AI 생각 방식:</label>
+                <input type="radio" id="ai-mode-depth" name="ai-mode" value="depth" checked>
+                <label for="ai-mode-depth">Depth</label>
+                <input type="radio" id="ai-mode-movetime" name="ai-mode" value="movetime">
+                <label for="ai-mode-movetime">Movetime (ms)</label>
+                <input type="number" id="ai-value-input" value="10" min="1">
+            </div>
+            <div id="piece-palette" class="hidden">
+                <!-- 기물 팔레트가 여기에 들어갑니다 -->
+            </div>
+        </footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>

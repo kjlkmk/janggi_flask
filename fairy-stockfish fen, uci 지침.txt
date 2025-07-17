@@ -1,0 +1,204 @@
+fairy-stockfish fen, uci 지침
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장기 AI 개발 가이드: FEN, UCI, 기물 표기법 완벽 이해</title>
+    <meta name="description" content="장기 AI 개발자를 위한 FEN, UCI 좌표 체계, 기물 표기법, 그리고 선수 판단 로직에 대한 상세 가이드입니다.">
+    <style>
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f8f9fa;
+            color: #343a40;
+            font-size: 16px;
+        }
+        .container {
+            max-width: 850px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 40px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 8px;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        h3 {
+            color: #2980b9;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.4em;
+            font-weight: 500;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        strong {
+            color: #c0392b; /* 강조 색상 */
+            font-weight: 700;
+        }
+        code {
+            background-color: #e9ecef;
+            padding: 3px 6px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #007bff;
+        }
+        .highlight-box {
+            background-color: #e6f2fa;
+            border-left: 6px solid #3498db;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .example-code {
+            background-color: #f0f3f6;
+            border-left: 4px solid #adb5bd;
+            padding: 15px;
+            margin: 20px 0;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+        .example-code code {
+            display: block;
+            background-color: transparent;
+            padding: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>장기 AI 개발 가이드: FEN, UCI, 기물 표기법 완벽 이해</h1>
+        <p>장기 AI 개발은 복잡해 보일 수 있지만, FEN(Forsyth-Edwards Notation) 문자열, UCI(Universal Chess Interface) 좌표 체계, 그리고 기물 표기법에 대한 정확한 이해만 있다면 한결 수월해집니다. 이 가이드는 장기판 이미지를 FEN 문자열로 변환하고, Fairy Stockfish AI 엔진으로부터 UCI 형식의 최적 수를 해석하는 데 필요한 모든 핵심 규칙을 명확하게 정의합니다.</p>
+
+        <hr>
+
+        <h2>1. 장기 기물 표준 표기법</h2>
+        <p>장기 기물은 FEN 및 UCI 표기법에서 특정 알파벳 문자로 표현됩니다. 팀을 구분하기 위해 <strong>한(Han)</strong> 나라는 대문자를, <strong>초(Cho)</strong> 나라는 소문자를 사용합니다.</p>
+
+        <h3>한나라 (大文字):</h3>
+        <ul>
+            <li>차: <strong>R</strong></li>
+            <li>마: <strong>N</strong></li>
+            <li>상: <strong>B</strong></li>
+            <li>사: <strong>A</strong></li>
+            <li>궁: <strong>K</strong></li>
+            <li>포: <strong>C</strong></li>
+            <li>병: <strong>P</strong></li>
+        </ul>
+
+        <h3>초나라 (小文字):</h3>
+        <ul>
+            <li>차: <strong>r</strong></li>
+            <li>마: <strong>n</strong></li>
+            <li>상: <strong>b</strong></li>
+            <li>사: <strong>a</strong></li>
+            <li>궁: <strong>k</strong></li>
+            <li>포: <strong>c</strong></li>
+            <li>병: <strong>p</strong></li>
+        </ul>
+
+        <hr>
+
+        <h2>2. 장기 FEN 문자열 생성 지침: 선수 판단 및 보드 정렬</h2>
+        <p>FEN 문자열을 생성할 때는 <strong>누가 선수를 두는지(활성 팀)</strong>와 <strong>보드를 어떻게 정렬(뒤집을지 말지)</strong>할지 명확히 결정해야 합니다.</p>
+
+        <div class="highlight-box">
+            <p><strong>핵심 원칙:</strong> FEN 문자열은 항상 <strong>한나라 궁('K')의 시점</strong>에서 위에서 아래로 행을 읽으며 작성됩니다.</p>
+        </div>
+
+        <h3>선수(활성 팀) 판단 기준:</h3>
+        <ul>
+            <li><strong>판의 아래쪽에 위치한 궁을 가진 팀이 선수가 됩니다.</strong></li>
+        </ul>
+
+        <h3>FEN 문자열 생성 규칙:</h3>
+        <ul>
+            <li><strong>한나라 궁('K')이 이미지/실제 판에서 아래쪽에 있는 경우:</strong>
+                <ul>
+                    <li><strong>선수 (활성 팀):</strong> <code>w</code> (white, 백). 이는 한나라가 선수를 둔다는 의미입니다.</li>
+                    <li><strong>보드 정렬:</strong> <strong>보드를 뒤집지 않고</strong> FEN 문자열을 생성합니다. 이미지의 맨 위 행이 FEN의 첫 번째 행이 됩니다. FEN은 기본적으로 한나라 시점을 기준으로 작성되므로, 이미지가 이미 한나라 시점이라면 그대로 사용합니다.</li>
+                    <li><strong>예시 FEN:</strong>
+                        <div class="example-code"><code>rnba1a1br/4k4/1c3n1c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/4K4/RNBA1ANBR w - - 0 1</code></div>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>초나라 궁('k')이 이미지/실제 판에서 아래쪽에 있는 경우:</strong>
+                <ul>
+                    <li><strong>선수 (활성 팀):</strong> <code>b</code> (black, 흑). 이는 초나라가 선수를 둔다는 의미입니다.</li>
+                    <li><strong>보드 정렬:</strong> FEN은 항상 한나라 시점을 기준으로 작성되어야 하므로, <strong>이미지에서 인식된 장기판 배열을 180도 뒤집어서 (회전시켜서)</strong> FEN 문자열을 구성해야 합니다. 즉, 이미지의 맨 아래 행이 FEN의 첫 번째 행이 되도록 합니다.</li>
+                    <li><strong>예시 FEN:</strong>
+                        <div class="example-code"><code>rnba1anbr/4k4/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/4K4/RNBA1ANBR b - - 0 1</code></div>
+                        <p>(참고: 이 FEN은 한나라 시점에서 본 초나라 선수의 초기 배치 FEN입니다.)</p>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+
+        <hr>
+
+        <h2>3. Fairy Stockfish 장기 모드 <code>bestmove</code> (UCI) 좌표 지침</h2>
+        <p>Fairy Stockfish Janggi 모드에서 반환하는 <code>bestmove</code> (예: <code>a1b1</code>)는 <strong>UCI (Universal Chess Interface) 형식</strong>을 따릅니다. 이 4자리 문자열은 <code>[출발 열][출발 행][도착 열][도착 행]</code>으로 구성됩니다.</p>
+
+        <div class="highlight-box">
+            <p><strong>핵심 원칙:</strong> Fairy Stockfish 엔진이 반환하는 <code>bestmove</code>의 UCI 좌표는 <strong>언제나 FEN 문자열이 정의된 방식, 즉 한나라 궁('K')이 아래에 있다고 가정한 표준적인 장기판 시점</strong>을 기준으로 합니다.</p>
+        </div>
+
+        <h3>UCI 좌표계 정의 (공통 적용):</h3>
+        <ul>
+            <li><strong>열 (Column):</strong> 왼쪽에서 오른쪽으로 <code>a, b, c, d, e, f, g, h, i</code> (총 9개)</li>
+            <li><strong>행 (Row):</strong> <strong>아래에서 위로</strong> <code>1, 2, 3, 4, 5, 6, 7, 8, 9, 10</code> (총 10개)
+                <ul>
+                    <li>즉, FEN 상에서 첫 번째 행(가장 위쪽)은 <code>10</code>이 되고, 마지막 행(가장 아래쪽, 한나라 궁이 있는 곳)은 <code>1</code>이 됩니다.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3><code>bestmove</code> 해석 시 고려사항:</h3>
+        <ul>
+            <li><strong>한나라 궁('K')이 이미지/실제 판에서 아래쪽에 있는 경우 (한나라 선수의 시점):</strong>
+                <ul>
+                    <li>이것이 <strong>표준적인 FEN 및 UCI 표기의 기준</strong>이며, Fairy Stockfish에서 반환된 <code>bestmove</code>는 <strong>현재 보이는 판의 좌표와 직접 매핑</strong>됩니다.</li>
+                    <li><strong>예시:</strong> <code>a1</code>은 한나라 쪽 맨 왼쪽 아래 칸, <code>i10</code>은 초나라 쪽 맨 오른쪽 위 칸을 나타냅니다.</li>
+                </ul>
+            </li>
+            <li><strong>초나라 궁('k')이 이미지/실제 판에서 아래쪽에 있는 경우 (초나라 선수의 시점):</strong>
+                <ul>
+                    <li>FEN은 초나라 궁이 아래에 있어도 180도 뒤집어 한나라 시점으로 변환하여 생성합니다.</li>
+                    <li><strong>Fairy Stockfish가 <code>bestmove</code>를 반환할 때,</strong> 이 UCI 좌표는 <strong>이미 180도 뒤집혀 한나라 시점으로 변환된 가상의 판</strong>을 기준으로 합니다.</li>
+                    <li>따라서, 사용자에게 보여주거나 실제 초나라 시점의 판에 적용하려면 이 <code>bestmove</code> 좌표를 다시 <strong>초나라 시점으로 역변환</strong>하는 추가적인 단계가 필요할 수 있습니다.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</body>
+</html>

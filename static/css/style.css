@@ -1,0 +1,316 @@
+/* Universal box-sizing for consistent layout */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Malgun Gothic', sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    /* [수정] 문제를 일으킨 overflow: hidden 제거 */
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    /* [수정] 모바일 화면 잘림 방지를 위한 최종 해결책 */
+    height: 100vh; /* 구형 브라우저 호환성 */
+    height: 100dvh; /* 모바일 브라우저 주소창 문제 해결 (핵심) */
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: white;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+.top-section {
+    padding: 10px 15px;
+    background-color: #34495e;
+    color: white;
+    text-align: center;
+    flex-shrink: 0; /* 내용이 많아져도 줄어들지 않음 */
+}
+
+.top-section h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.game-info-top p {
+    margin: 4px 0;
+    font-size: 0.9em;
+}
+
+.middle-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1; /* 남은 공간을 모두 채움 */
+    padding: 10px;
+    overflow-y: auto; /* 보드 내용이 넘칠 경우 스크롤 */
+    min-height: 0; /* flex 자식 요소의 높이 계산 오류 방지 */
+}
+
+#board {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 9 / 10;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    border: 2px solid #34495e;
+    background-image: url('../img/boards/JanggiWood.svg');
+    background-size: cover;
+    position: relative;
+    transform-style: preserve-3d; /* 3D 변환을 위해 추가 */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15); /* 입체감 추가 */
+}
+
+#board.flipped {
+    transform: rotateX(180deg); /* 보드를 수직으로 뒤집기 */
+}
+
+#board.flipped .piece {
+    transform: rotateX(180deg); /* 뒤집힌 보드에서 기물을 다시 뒤집어 똑바로 보이게 함 */
+}
+
+.square {
+    position: relative;
+}
+
+.piece {
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: absolute;
+    top: 0; left: 0;
+    cursor: pointer;
+    transition: transform 0.1s ease-in-out;
+    z-index: 2;
+}
+
+.piece:hover {
+    transform: scale(1.1);
+}
+
+.selection-indicator, .highlight-move {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.selection-indicator {
+    background-color: rgba(52, 152, 219, 0.5);
+    border: 2px solid #2980b9;
+    border-radius: 50%;
+    transform: scale(0.9);
+}
+
+.highlight-move {
+    background-color: rgba(46, 204, 113, 0.6);
+    border: 2px dashed #27ae60;
+}
+
+.bottom-section {
+    padding: 10px 15px;
+    background-color: #ecf0f1;
+    flex-shrink: 0; /* 내용이 많아져도 줄어들지 않음 */
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.controls-top {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.fen-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.fen-controls input[type="text"] {
+    flex-grow: 1;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 0.9em;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    flex-shrink: 0;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+#piece-palette {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #e0e0e0;
+    border-radius: 8px;
+}
+
+#piece-palette .palette-piece {
+    width: 8.5vw;
+    height: 8.5vw;
+    max-width: 45px; /* 데스크탑에서 너무 커지지 않도록 */
+    max-height: 45px;
+    background-size: 100%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 5px;
+}
+
+#piece-palette .palette-piece.selected-palette-piece {
+    border-color: #3498db;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* -------------------------------------------------- */
+/* --- 데스크탑 화면을 위한 미디어 쿼리 (핵심 수정) --- */
+/* -------------------------------------------------- */
+@media (min-width: 601px) {
+    /* [수정] 기존의 중첩된 .app-container 오류를 수정하고 3단 레이아웃으로 변경 */
+    .app-container {
+        flex-direction: row;
+        max-width: none;
+        height: 100vh;
+        max-height: none;
+        padding: 20px; /* 전체 앱에 여백 추가 */
+        gap: 20px; /* 컬럼(섹션) 간의 간격 추가 */
+        align-items: stretch; /* 컬럼들이 같은 높이를 갖도록 함 */
+        overflow: hidden;
+    }
+
+    /* [수정] 좌측 정보 패널 스타일 */
+    .top-section {
+        flex-basis: 280px; /* 고정 너비 지정 */
+        flex-shrink: 0;
+        text-align: left;
+        padding: 20px;
+        background-color: #fff;
+        color: #333;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-radius: 8px;
+        overflow-y: auto; /* 내용이 길어지면 스크롤 */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .top-section h1 {
+        color: #34495e;
+    }
+    
+    /* [수정] 중앙 컨텐츠 (장기판) 영역 스타일 */
+    .middle-section {
+        flex-grow: 1; /* 남은 공간 모두 차지 */
+        padding: 0;
+        overflow: hidden;
+        height: 100%;
+        max-height: none; /* 모바일 높이 제한 제거 */
+    }
+
+    /* [수정] 데스크탑에서 장기판이 비율을 유지하며 중앙에 오도록 설정 */
+    #board {
+        width: auto; /* 너비 자동 조절 */
+        height: 100%; /* 높이를 부모(.middle-section)에 맞춤 */
+        max-width: 100%; /* 부모 너비를 넘지 않도록 함 */
+        margin: auto; /* 중앙 정렬 */
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2); /* 그림자 강화 */
+    }
+
+    /* [수정] 우측 컨트롤 패널 스타일 */
+    .bottom-section {
+        flex-basis: 280px; /* 고정 너비 지정 */
+        flex-shrink: 0;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px; /* 컨트롤 요소 간 간격 조정 */
+        max-height: none; /* 모바일 높이 제한 제거 */
+    }
+
+    /* [수정] 데스크탑 사이드바에 맞게 컨트롤 버튼들을 세로로 정렬 */
+    .controls-top, .fen-controls {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch; /* 내부 요소들을 꽉 채움 */
+    }
+
+    .fen-controls input[type="text"] {
+        font-size: 1em;
+    }
+
+    button {
+        font-size: 1em;
+        padding: 12px 15px;
+    }
+
+    #piece-palette {
+        padding: 15px;
+        gap: 8px;
+    }
+}
+
+/* 모바일 화면 (600px 이하)에만 적용 - 이 부분은 변경하지 않았습니다. */
+@media (max-width: 600px) {
+    .controls-top {
+        gap: 5px; /* 버튼 간격 줄이기 */
+    }
+
+    .fen-controls {
+        gap: 3px; /* FEN 컨트롤 간격 줄이기 */
+    }
+
+    .fen-controls input[type="text"] {
+        padding: 5px; /* 입력 필드 패딩 줄이기 */
+        font-size: 0.8em; /* 입력 필드 폰트 크기 줄이기 */
+    }
+
+    button {
+        padding: 7px 10px; /* 버튼 패딩 줄이기 */
+        font-size: 0.8em; /* 버튼 폰트 크기 줄이기 */
+    }
+
+    /* AI 설정 섹션의 라벨 및 입력 필드 크기 조정 */
+    .ai-settings label {
+        font-size: 0.8em;
+    }
+
+    .ai-settings input[type="number"] {
+        padding: 5px;
+        font-size: 0.8em;
+        width: 60px; /* 너비 조정 */
+    }
+}
