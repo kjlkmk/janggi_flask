@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # Stockfish 엔진 경로 설정
-STOCKFISH_PATH = os.path.join(os.path.dirname(__file__), 'stockfish.exe')
+STOCKFISH_PATH = os.path.join(os.path.dirname(__file__), 'stockfish')
 
 @app.route('/')
 def index():
@@ -19,14 +19,19 @@ def docs():
 
 def _get_stockfish_move(fen, ai_mode, ai_value):
     try:
+        popen_kwargs = {
+            "stdin": subprocess.PIPE,
+            "stdout": subprocess.PIPE,
+            "stderr": subprocess.PIPE,
+            "text": True,
+            "universal_newlines": True,
+        }
+        if os.name == 'nt':
+            popen_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+
         process = subprocess.Popen(
             [STOCKFISH_PATH],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            universal_newlines=True,
-            creationflags=subprocess.CREATE_NO_WINDOW
+            **popen_kwargs
         )
 
         def send_command(cmd):
