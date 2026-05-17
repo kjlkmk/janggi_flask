@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedPalettePiece = 'empty'; // 팔레트에서 선택된 기물
 
     let isBoardFlipped = false; // 보드 뒤집힘 상태 추적
+    let gameOver = false; // 게임 종료 여부
 
     let currentAiMode = 'depth'; // 현재 AI 생각 방식 (depth 또는 movetime)
     let currentAiValue = 10; // 현재 AI 생각 값 (기본값 depth 10)
@@ -270,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * 장기판 클릭 이벤트를 처리합니다.
      */
     function handleBoardClick(e) {
+        if (gameOver) return; // 게임 종료 시 클릭 비활성화
         if (isEditing) {
             handleEditBoardClick(e);
             return;
@@ -379,8 +381,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentPlayer = (currentPlayer === 'w') ? 'b' : 'w';
         updateStatus();
+        checkGameStatus(); // 사용자 이동 후 게임 상태 확인
         
-        await getAiMove();
+        // AI 턴이면 AI 이동 실행
+        if (currentPlayer !== playerTurn) {
+            setTimeout(getAiMove, 500); // 약간의 딜레이 후 AI 이동
+        }
     }
 
     /**
@@ -416,6 +422,38 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error getting AI move:', error);
             statusElement.textContent = `오류: ${error.message}`;
         }
+    }
+
+    /**
+     * 서버에서 게임 상태(종료 여부)를 확인합니다.
+     */
+    function checkGameStatus() {
+        const currentFen = boardToFen();
+        fetch('/get_game_status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fen: currentFen })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'checkmate') {
+                gameOver = true;
+                const winner = data.winner === 'cho' ? '초(楚)' : '한(漢)';
+                statusElement.textContent = `외통! ${winner}가 승리했습니다.`;
+                alert(`외통! ${winner}가 승리했습니다.`);
+            } else if (data.status === 'stalemate') {
+                gameOver = true;
+                statusElement.textContent = '멍군! 무승부입니다.';
+                alert('멍군! 무승부입니다.');
+            } else if (data.status === 'check') {
+                statusElement.textContent = '장군!';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking game status:', error);
+        });
     }
 
     /**
@@ -469,6 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBoard();
         currentPlayer = (currentPlayer === 'w') ? 'b' : 'w';
         updateStatus();
+        checkGameStatus(); // AI 이동 후 게임 상태 확인
     }
 
     /**
@@ -723,6 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function initializeGame() {
         console.log("Initializing game...");
+        gameOver = false;
         board = fenToBoard(INITIAL_FEN);
         currentPlayer = 'w'; // 항상 한나라가 먼저 시작
         playerTurn = 'w'; // 사용자는 항상 한나라
